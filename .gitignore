@@ -39,3 +39,9 @@ luac.out
 *.x86_64
 *.hex
 
+# Assets
+*.png
+*.vmt
+*.vtf
+*.wav
+*.mp3
