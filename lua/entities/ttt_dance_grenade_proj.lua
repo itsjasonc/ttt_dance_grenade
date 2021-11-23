@@ -133,27 +133,12 @@ function ENT:Explode(tr)
 	end
 end
 
-function ENT:StartDance(ply, attacker)
-	if not ply or not IsValid(ply) then return end
-	if not ply:IsPlayer() then return end
-	
-	if not ply:IsFrozen() then
-		hook.Call('StartDancing', nil, ply)
-	end
-end
-
-function ENT:EndDance(ply)
-	if not ply or not IsValid(ply) then return end
-	if not ply:IsPlayer() then return end
-	
-	hook.Call('StopDancing', nil, ply)
-end
 
 function ENT:OnRemove()
 	local players = player.GetAll()
 	
 	for i=1,#players do
-		self:EndDance(players[i])
+		hook.Call('StopDancing', nil, players[i])
 	end
 	
 	if SERVER then
@@ -166,18 +151,22 @@ if CLIENT then
 		local target = net.ReadEntity()
 		
 		if not target or not IsValid(target) then return end
-		
-		target.dancing = net.ReadBool()
-		
-		if target.dancing then
-			-- start dance animation
-			if math.random(0, 1) == 0 then
-				target:AnimRestartGesture(GESTURE_SLOT_CUSTOM, ACT_GMOD_GESTURE_TAUNT_ZOMBIE, false)
+
+		if target:Alive() then
+			target.dancing = net.ReadBool()
+			
+			if target.dancing then
+				-- start dance animation
+				if math.random(0, 1) == 0 then
+					target:AnimRestartGesture(GESTURE_SLOT_CUSTOM, ACT_GMOD_GESTURE_TAUNT_ZOMBIE, false)
+				else
+					target:AnimRestartGesture(GESTURE_SLOT_CUSTOM, ACT_GMOD_TAUNT_DANCE, false)
+				end
 			else
-				target:AnimRestartGesture(GESTURE_SLOT_CUSTOM, ACT_GMOD_TAUNT_DANCE, false)
+				-- stop dance animation
+				target:AnimResetGestureSlot(GESTURE_SLOT_CUSTOM)
 			end
 		else
-			-- stop dance animation
 			target:AnimResetGestureSlot(GESTURE_SLOT_CUSTOM)
 		end
 	end)
@@ -189,6 +178,15 @@ end
 
 if SERVER then
 	util.AddNetworkString('ttt2_dance_grenade_dance')
+
+	function ENT:StartDance(ply, attacker)
+		if not ply or not IsValid(ply) then return end
+		if not ply:IsPlayer() then return end
+		
+		if not ply:IsFrozen() then
+			hook.Call('StartDancing', nil, ply)
+		end
+	end
 	
 	hook.Add('StartDancing', 'ttt2_dance_grenade_start_dance', function(ply)
 		if not IsValid(ply) or not ply:IsPlayer() then return end
